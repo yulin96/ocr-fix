@@ -14,9 +14,9 @@
       rel="stylesheet"
     />
     <script>
-      const savedTheme = localStorage.getItem('theme');
+      const savedTheme = localStorage.getItem('theme')
       if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
+        document.documentElement.classList.add('dark')
       }
     </script>
     <style>
@@ -151,6 +151,86 @@
         font-size: 13px;
         color: var(--badge-text);
         font-family: 'Menlo', 'Consolas', monospace;
+      }
+
+      .range-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px 20px;
+        margin-bottom: 20px;
+      }
+
+      .range-panel .section-title {
+        margin-bottom: 12px;
+      }
+
+      .range-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+      }
+
+      .range-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          transform 0.2s ease,
+          background-color 0.2s ease;
+      }
+
+      .range-option:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+      }
+
+      .range-option input {
+        margin-top: 2px;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+        flex-shrink: 0;
+      }
+
+      .range-option-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .range-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .range-code {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: 'Menlo', 'Consolas', monospace;
+      }
+
+      .range-option input:checked ~ .range-option-content .range-name {
+        color: var(--accent);
+      }
+
+      .range-option input:checked ~ .range-option-content .range-code {
+        color: var(--badge-text);
+      }
+
+      .range-note {
+        margin-top: 10px;
+        color: var(--text-dim);
+        font-size: 12px;
       }
 
       .theme-toggle {
@@ -506,7 +586,7 @@
   <body>
     <div class="wrapper">
       <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌓</button>
-      
+
       <!-- Header -->
       <header>
         <div class="badge">🔬 Unicode 字符检测</div>
@@ -516,6 +596,41 @@
           <code>⽉ U+2F49</code> → <code>月 U+6708</code>
         </p>
       </header>
+
+      <section class="range-panel" aria-label="转换区段选择">
+        <div class="section-title">转换区段</div>
+        <div class="range-grid" id="range-options">
+          <label class="range-option">
+            <input type="checkbox" data-range-key="kangxi" checked />
+            <span class="range-option-content">
+              <span class="range-name">Kangxi Radicals</span>
+              <span class="range-code">U+2F00–U+2FD5</span>
+            </span>
+          </label>
+          <label class="range-option">
+            <input type="checkbox" data-range-key="radicals-supplement" checked />
+            <span class="range-option-content">
+              <span class="range-name">CJK Radicals Supplement</span>
+              <span class="range-code">U+2E80–U+2EFF</span>
+            </span>
+          </label>
+          <label class="range-option">
+            <input type="checkbox" data-range-key="compat-ideographs" checked />
+            <span class="range-option-content">
+              <span class="range-name">CJK Compatibility Ideographs</span>
+              <span class="range-code">U+F900–U+FAFF</span>
+            </span>
+          </label>
+          <label class="range-option">
+            <input type="checkbox" data-range-key="compat-ideographs-supplement" checked />
+            <span class="range-option-content">
+              <span class="range-name">CJK Compatibility Ideographs Supplement</span>
+              <span class="range-code">U+2F800–U+2FA1F</span>
+            </span>
+          </label>
+        </div>
+        <p class="range-note">只转换勾选的区段；未勾选的字符会原样保留。</p>
+      </section>
 
       <!-- Input -->
       <div class="card" id="input-card">
@@ -573,14 +688,69 @@
           </div>
         </div>
       </div>
-
-
     </div>
 
     <!-- Toast -->
     <div id="toast">✓ 已复制到剪贴板</div>
 
     <script>
+      const RANGE_DEFS = [
+        { key: 'kangxi', label: 'Kangxi Radicals', start: 0x2f00, end: 0x2fd5 },
+        { key: 'radicals-supplement', label: 'CJK Radicals Supplement', start: 0x2e80, end: 0x2eff },
+        { key: 'compat-ideographs', label: 'CJK Compatibility Ideographs', start: 0xf900, end: 0xfaff },
+        {
+          key: 'compat-ideographs-supplement',
+          label: 'CJK Compatibility Ideographs Supplement',
+          start: 0x2f800,
+          end: 0x2fa1f,
+        },
+      ]
+
+      const RANGE_STORAGE_KEY = 'ocr-fix:selected-ranges'
+
+      function getSelectedRangeKeys() {
+        return Array.from(document.querySelectorAll('[data-range-key]'))
+          .filter((el) => el.checked)
+          .map((el) => el.dataset.rangeKey)
+      }
+
+      function getSelectedRanges() {
+        const selectedKeys = new Set(getSelectedRangeKeys())
+        return RANGE_DEFS.filter((range) => selectedKeys.has(range.key))
+      }
+
+      function isCodePointInRanges(cp, ranges) {
+        return ranges.some((range) => cp >= range.start && cp <= range.end)
+      }
+
+      function isSuspiciousChar(ch) {
+        const cp = ch.codePointAt(0)
+        return isCodePointInRanges(cp, RANGE_DEFS)
+      }
+
+      function isSelectedSuspiciousChar(ch, selectedRanges) {
+        const cp = ch.codePointAt(0)
+        return isCodePointInRanges(cp, selectedRanges)
+      }
+
+      function loadRangePreferences() {
+        const raw = localStorage.getItem(RANGE_STORAGE_KEY)
+        if (!raw) return
+
+        try {
+          const selectedKeys = new Set(JSON.parse(raw))
+          document.querySelectorAll('[data-range-key]').forEach((el) => {
+            el.checked = selectedKeys.has(el.dataset.rangeKey)
+          })
+        } catch {
+          // Ignore invalid persisted data and keep defaults.
+        }
+      }
+
+      function saveRangePreferences() {
+        localStorage.setItem(RANGE_STORAGE_KEY, JSON.stringify(getSelectedRangeKeys()))
+      }
+
       // ────────────────────────────────────────────────
       // 完整 Kangxi Radicals → CJK 映射 (U+2F00–U+2FD5)
       // ────────────────────────────────────────────────
@@ -994,19 +1164,6 @@
       // ────────────────────────────────────────────────
       // Detect: does the char look like Chinese but isn't?
       // ────────────────────────────────────────────────
-      function isSuspiciousChar(ch) {
-        const cp = ch.codePointAt(0)
-        // Kangxi radicals
-        if (cp >= 0x2f00 && cp <= 0x2fd5) return true
-        // CJK Radicals Supplement
-        if (cp >= 0x2e80 && cp <= 0x2eff) return true
-        // CJK Compatibility Ideographs
-        if (cp >= 0xf900 && cp <= 0xfaff) return true
-        // CJK Compatibility Ideographs Supplement
-        if (cp >= 0x2f800 && cp <= 0x2fa1f) return true
-        return false
-      }
-
       function hasFix(ch) {
         return !!KANGXI_MAP[ch]
       }
@@ -1014,12 +1171,12 @@
       // ────────────────────────────────────────────────
       // Convert text
       // ────────────────────────────────────────────────
-      function convertText(input) {
+      function convertText(input, selectedRanges = getSelectedRanges()) {
         let result = ''
         let badCount = 0
         let fixCount = 0
         for (const ch of [...input]) {
-          if (isSuspiciousChar(ch)) {
+          if (isSelectedSuspiciousChar(ch, selectedRanges)) {
             badCount++
             if (KANGXI_MAP[ch]) {
               result += KANGXI_MAP[ch]
@@ -1037,10 +1194,10 @@
       // ────────────────────────────────────────────────
       // Build highlighted HTML for ORIGINAL text
       // ────────────────────────────────────────────────
-      function buildHighlightHTML(input) {
+      function buildHighlightHTML(input, selectedRanges = getSelectedRanges()) {
         let html = ''
         for (const ch of [...input]) {
-          if (isSuspiciousChar(ch)) {
+          if (isSelectedSuspiciousChar(ch, selectedRanges)) {
             const fix = KANGXI_MAP[ch]
             const cp = '\\u' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')
             if (fix) {
@@ -1069,12 +1226,16 @@
       const badCountEl = document.getElementById('bad-count')
       const fixCountEl = document.getElementById('fix-count')
       const btnCopy = document.getElementById('btn-copy')
+      const rangeInputs = Array.from(document.querySelectorAll('[data-range-key]'))
 
-      inputEl.addEventListener('input', () => {
+      loadRangePreferences()
+
+      function refreshAnalysis() {
         const val = inputEl.value
         inputCount.textContent = [...val].length + ' 字符'
         if (val.trim()) {
-          const { badCount, fixCount } = convertText(val)
+          const selectedRanges = getSelectedRanges()
+          const { badCount, fixCount } = convertText(val, selectedRanges)
           inputStats.style.display = 'flex'
           badCountEl.textContent = badCount
           fixCountEl.textContent = fixCount
@@ -1083,7 +1244,18 @@
           inputStats.style.display = 'none'
           btnCopy.disabled = true
         }
+      }
+
+      rangeInputs.forEach((input) => {
+        input.addEventListener('change', () => {
+          saveRangePreferences()
+          refreshAnalysis()
+        })
       })
+
+      inputEl.addEventListener('input', refreshAnalysis)
+
+      refreshAnalysis()
 
       // ────────────────────────────────────────────────
       // Convert action
@@ -1094,7 +1266,8 @@
         const input = inputEl.value
         if (!input.trim()) return
 
-        const { result, badCount, fixCount } = convertText(input)
+        const selectedRanges = getSelectedRanges()
+        const { result, badCount, fixCount } = convertText(input, selectedRanges)
         lastConverted = result
 
         const outputSection = document.getElementById('output-section')
@@ -1104,7 +1277,7 @@
         const legendUnk = document.getElementById('legend-unk')
 
         outputSection.classList.add('visible')
-        outputContent.innerHTML = buildHighlightHTML(input)
+        outputContent.innerHTML = buildHighlightHTML(input, selectedRanges)
         outputMeta.textContent = `替换 ${fixCount} 个字符`
 
         legendBad.style.display = fixCount > 0 ? 'flex' : 'none'
@@ -1143,12 +1316,9 @@
       // Theme Toggle Logic
       // ────────────────────────────────────────────────
       function toggleTheme() {
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        const isDark = document.documentElement.classList.toggle('dark')
+        localStorage.setItem('theme', isDark ? 'dark' : 'light')
       }
-
-
-
     </script>
   </body>
 </html>
