@@ -540,8 +540,11 @@ const inputStats = document.getElementById('input-stats')
 const badCountEl = document.getElementById('bad-count')
 const fixCountEl = document.getElementById('fix-count')
 const btnCopy = document.getElementById('btn-copy')
+const rangePanel = document.querySelector('.range-panel')
 const rangeInputs = Array.from(document.querySelectorAll('[data-range-key]'))
 const rangeTooltip = document.getElementById('range-tooltip')
+
+let rangeTooltipHideTimer = null
 
 loadRangePreferences()
 
@@ -555,8 +558,23 @@ function getTooltipText(control) {
 }
 
 function hideRangeTooltip() {
+  if (rangeTooltipHideTimer) {
+    clearTimeout(rangeTooltipHideTimer)
+    rangeTooltipHideTimer = null
+  }
   rangeTooltip.classList.remove('show')
   rangeTooltip.setAttribute('aria-hidden', 'true')
+}
+
+function scheduleHideRangeTooltip(delay = 120) {
+  if (rangeTooltipHideTimer) {
+    clearTimeout(rangeTooltipHideTimer)
+  }
+  rangeTooltipHideTimer = setTimeout(() => {
+    rangeTooltipHideTimer = null
+    rangeTooltip.classList.remove('show')
+    rangeTooltip.setAttribute('aria-hidden', 'true')
+  }, delay)
 }
 
 function positionRangeTooltip(anchorRect) {
@@ -591,6 +609,10 @@ function positionRangeTooltip(anchorRect) {
 
 function showRangeTooltip(text, anchorRect) {
   if (!text) return
+  if (rangeTooltipHideTimer) {
+    clearTimeout(rangeTooltipHideTimer)
+    rangeTooltipHideTimer = null
+  }
   rangeTooltip.textContent = text
   rangeTooltip.setAttribute('aria-hidden', 'false')
   rangeTooltip.classList.add('show')
@@ -609,7 +631,9 @@ function wireRangeTooltip(control) {
     if (text) showRangeTooltip(text, label.getBoundingClientRect())
   })
 
-  label.addEventListener('mouseleave', hideRangeTooltip)
+  label.addEventListener('mouseleave', () => {
+    scheduleHideRangeTooltip(100)
+  })
 
   control.addEventListener('focus', () => {
     const text = getTooltipText(control)
@@ -618,7 +642,13 @@ function wireRangeTooltip(control) {
     showRangeTooltip(text, rect)
   })
 
-  control.addEventListener('blur', hideRangeTooltip)
+  control.addEventListener('blur', (event) => {
+    if (rangePanel?.contains(event.relatedTarget)) {
+      scheduleHideRangeTooltip(100)
+      return
+    }
+    scheduleHideRangeTooltip(60)
+  })
 }
 
 rangeInputs.forEach(wireRangeTooltip)
