@@ -695,15 +695,10 @@
 
     <script>
       const RANGE_DEFS = [
-        { key: 'kangxi', label: 'Kangxi Radicals', start: 0x2f00, end: 0x2fd5 },
-        { key: 'radicals-supplement', label: 'CJK Radicals Supplement', start: 0x2e80, end: 0x2eff },
-        { key: 'compat-ideographs', label: 'CJK Compatibility Ideographs', start: 0xf900, end: 0xfaff },
-        {
-          key: 'compat-ideographs-supplement',
-          label: 'CJK Compatibility Ideographs Supplement',
-          start: 0x2f800,
-          end: 0x2fa1f,
-        },
+        { key: 'kangxi', start: 0x2f00, end: 0x2fd5 },
+        { key: 'radicals-supplement', start: 0x2e80, end: 0x2eff },
+        { key: 'compat-ideographs', start: 0xf900, end: 0xfaff },
+        { key: 'compat-ideographs-supplement', start: 0x2f800, end: 0x2fa1f },
       ]
 
       const RANGE_STORAGE_KEY = 'ocr-fix:selected-ranges'
@@ -721,11 +716,6 @@
 
       function isCodePointInRanges(cp, ranges) {
         return ranges.some((range) => cp >= range.start && cp <= range.end)
-      }
-
-      function isSuspiciousChar(ch) {
-        const cp = ch.codePointAt(0)
-        return isCodePointInRanges(cp, RANGE_DEFS)
       }
 
       function isSelectedSuspiciousChar(ch, selectedRanges) {
@@ -752,9 +742,9 @@
       }
 
       // ────────────────────────────────────────────────
-      // 完整 Kangxi Radicals → CJK 映射 (U+2F00–U+2FD5)
+      // Unicode 伪中文映射：用于检测到的字符转换与预览
       // ────────────────────────────────────────────────
-      const KANGXI_MAP = {
+      const UNICODE_FIX_MAP = {
         '\u2F00': '\u4E00', // ⼀ → 一
         '\u2F01': '\u4E28', // ⼁ → 丨
         '\u2F02': '\u4E36', // ⼂ → 丶
@@ -1161,25 +1151,35 @@
         '\u2EF3': '\u9F9F', // ⻳ → 龟
       }
 
-      // ────────────────────────────────────────────────
-      // Detect: does the char look like Chinese but isn't?
-      // ────────────────────────────────────────────────
-      function hasFix(ch) {
-        return !!KANGXI_MAP[ch]
+      const UNICODE_FIX_MAPS_BY_RANGE = Object.fromEntries(
+        RANGE_DEFS.map((range) => [
+          range.key,
+          Object.fromEntries(
+            Object.entries(UNICODE_FIX_MAP).filter(([ch]) => {
+              const cp = ch.codePointAt(0)
+              return cp >= range.start && cp <= range.end
+            }),
+          ),
+        ]),
+      )
+
+      function getFixMapForRanges(selectedRanges) {
+        return Object.assign({}, ...selectedRanges.map((range) => UNICODE_FIX_MAPS_BY_RANGE[range.key] ?? {}))
       }
 
       // ────────────────────────────────────────────────
       // Convert text
       // ────────────────────────────────────────────────
       function convertText(input, selectedRanges = getSelectedRanges()) {
+        const fixMap = getFixMapForRanges(selectedRanges)
         let result = ''
         let badCount = 0
         let fixCount = 0
         for (const ch of [...input]) {
           if (isSelectedSuspiciousChar(ch, selectedRanges)) {
             badCount++
-            if (KANGXI_MAP[ch]) {
-              result += KANGXI_MAP[ch]
+            if (fixMap[ch]) {
+              result += fixMap[ch]
               fixCount++
             } else {
               result += ch // unknown, keep
@@ -1195,10 +1195,11 @@
       // Build highlighted HTML for ORIGINAL text
       // ────────────────────────────────────────────────
       function buildHighlightHTML(input, selectedRanges = getSelectedRanges()) {
+        const fixMap = getFixMapForRanges(selectedRanges)
         let html = ''
         for (const ch of [...input]) {
           if (isSelectedSuspiciousChar(ch, selectedRanges)) {
-            const fix = KANGXI_MAP[ch]
+            const fix = fixMap[ch]
             const cp = '\\u' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')
             if (fix) {
               html += `<mark class="highlight-bad" title="原: ${ch} (${cp})  →  替换为: ${fix}">${fix}</mark>`
