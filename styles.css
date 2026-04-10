@@ -28,6 +28,10 @@
   --badge-border: rgba(79, 70, 229, 0.2);
   --badge-text: var(--accent);
   --h1-gradient: linear-gradient(135deg, #1e293b 0%, #4f46e5 50%, #7c3aed 100%);
+  --tooltip-bg: rgba(255, 255, 255, 0.98);
+  --tooltip-border: rgba(148, 163, 184, 0.28);
+  --tooltip-text: #0f172a;
+  --tooltip-shadow: 0 18px 40px rgba(148, 163, 184, 0.22), 0 4px 12px rgba(148, 163, 184, 0.12);
 }
 
 html.dark {
@@ -46,6 +50,10 @@ html.dark {
   --badge-border: rgba(108, 99, 255, 0.35);
   --badge-text: #a09dff;
   --h1-gradient: linear-gradient(135deg, #e8eaf6 0%, #a09dff 50%, #c084fc 100%);
+  --tooltip-bg: rgba(15, 23, 42, 0.98);
+  --tooltip-border: rgba(148, 163, 184, 0.22);
+  --tooltip-text: #f8fafc;
+  --tooltip-shadow: 0 18px 40px rgba(0, 0, 0, 0.36), 0 4px 12px rgba(0, 0, 0, 0.16);
 }
 
 html {
@@ -217,15 +225,13 @@ h1 {
   max-width: min(320px, calc(100vw - 24px));
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(99, 102, 241, 0.28);
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(31, 41, 55, 0.98));
-  color: #f9fafb;
+  border: 1px solid var(--tooltip-border);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
   font-size: 12px;
   line-height: 1.6;
-  box-shadow:
-    0 18px 40px rgba(15, 23, 42, 0.24),
-    0 4px 12px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--tooltip-shadow);
+  backdrop-filter: blur(12px);
   pointer-events: none;
   opacity: 0;
   transform: translateY(6px) scale(0.98);
@@ -238,24 +244,19 @@ h1 {
   content: '';
   position: absolute;
   left: 20px;
-  top: -6px;
+  bottom: -6px;
   width: 12px;
   height: 12px;
   transform: rotate(45deg);
   background: inherit;
-  border-left: inherit;
-  border-top: inherit;
-  border-top-left-radius: 2px;
+  border-right: inherit;
+  border-bottom: inherit;
+  border-bottom-right-radius: 2px;
 }
 
 .range-tooltip.show {
   opacity: 1;
   transform: translateY(0) scale(1);
-}
-
-.dark .range-tooltip {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
-  border-color: rgba(148, 163, 184, 0.22);
 }
 
 .theme-toggle {

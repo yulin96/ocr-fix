@@ -559,58 +559,60 @@ function hideRangeTooltip() {
   rangeTooltip.setAttribute('aria-hidden', 'true')
 }
 
-function positionRangeTooltip(anchorX, anchorY) {
+function positionRangeTooltip(anchorRect) {
   const tooltipRect = rangeTooltip.getBoundingClientRect()
-  const gap = 14
+  const gap = 12
   const margin = 12
-  let left = anchorX + gap
-  let top = anchorY + gap
+  let left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2
+  let top = anchorRect.top - tooltipRect.height - gap
+
+  if (left < margin) {
+    left = margin
+  }
 
   if (left + tooltipRect.width > window.innerWidth - margin) {
-    left = Math.max(margin, anchorX - tooltipRect.width - gap)
+    left = window.innerWidth - tooltipRect.width - margin
+  }
+
+  if (top < margin) {
+    top = anchorRect.bottom + gap
   }
 
   if (top + tooltipRect.height > window.innerHeight - margin) {
-    top = Math.max(margin, anchorY - tooltipRect.height - gap)
+    top = Math.max(margin, window.innerHeight - tooltipRect.height - margin)
   }
 
   rangeTooltip.style.left = `${Math.max(margin, left)}px`
   rangeTooltip.style.top = `${Math.max(margin, top)}px`
 }
 
-function showRangeTooltip(text, anchorX, anchorY) {
+function showRangeTooltip(text, anchorRect) {
   if (!text) return
   rangeTooltip.textContent = text
   rangeTooltip.setAttribute('aria-hidden', 'false')
   rangeTooltip.classList.add('show')
 
   requestAnimationFrame(() => {
-    positionRangeTooltip(anchorX, anchorY)
+    positionRangeTooltip(anchorRect)
   })
-}
-
-function handleRangeTooltipMove(event) {
-  if (!rangeTooltip.classList.contains('show')) return
-  positionRangeTooltip(event.clientX, event.clientY)
 }
 
 function wireRangeTooltip(control) {
   const label = getRangeLabelFromControl(control)
   if (!label) return
 
-  label.addEventListener('mouseenter', (event) => {
+  label.addEventListener('mouseenter', () => {
     const text = getTooltipText(control)
-    if (text) showRangeTooltip(text, event.clientX, event.clientY)
+    if (text) showRangeTooltip(text, label.getBoundingClientRect())
   })
 
-  label.addEventListener('mousemove', handleRangeTooltipMove)
   label.addEventListener('mouseleave', hideRangeTooltip)
 
   control.addEventListener('focus', () => {
     const text = getTooltipText(control)
     if (!text) return
     const rect = label.getBoundingClientRect()
-    showRangeTooltip(text, rect.left + rect.width / 2, rect.bottom + 10)
+    showRangeTooltip(text, rect)
   })
 
   control.addEventListener('blur', hideRangeTooltip)
