@@ -13,6 +13,12 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
     <style>
       *,
       *::before,
@@ -40,6 +46,28 @@
         --radius-sm: 8px;
         --shadow: 0 8px 32px rgba(148, 163, 184, 0.2);
         --glow: 0 0 40px rgba(79, 70, 229, 0.15);
+        --badge-bg: rgba(79, 70, 229, 0.1);
+        --badge-border: rgba(79, 70, 229, 0.2);
+        --badge-text: var(--accent);
+        --h1-gradient: linear-gradient(135deg, #1e293b 0%, #4f46e5 50%, #7c3aed 100%);
+      }
+
+      html.dark {
+        --bg: #0d0f18;
+        --surface: #141722;
+        --surface2: #1c2032;
+        --border: #2a2f47;
+        --border-hover: #3d4566;
+        --accent: #6c63ff;
+        --accent2: #a259ff;
+        --text: #e8eaf6;
+        --text-muted: #7b82a8;
+        --text-dim: #4a5080;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        --badge-bg: rgba(108, 99, 255, 0.15);
+        --badge-border: rgba(108, 99, 255, 0.35);
+        --badge-text: #a09dff;
+        --h1-gradient: linear-gradient(135deg, #e8eaf6 0%, #a09dff 50%, #c084fc 100%);
       }
 
       html {
@@ -85,13 +113,13 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(79, 70, 229, 0.1);
-        border: 1px solid rgba(79, 70, 229, 0.2);
+        background: var(--badge-bg);
+        border: 1px solid var(--badge-border);
         border-radius: 100px;
         padding: 4px 14px;
         font-size: 12px;
         font-weight: 500;
-        color: var(--accent);
+        color: var(--badge-text);
         letter-spacing: 0.04em;
         margin-bottom: 20px;
       }
@@ -99,7 +127,7 @@
       h1 {
         font-size: clamp(28px, 5vw, 42px);
         font-weight: 700;
-        background: linear-gradient(135deg, #1e293b 0%, #4f46e5 50%, #7c3aed 100%);
+        background: var(--h1-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -116,13 +144,38 @@
       }
 
       .subtitle code {
-        background: rgba(79, 70, 229, 0.1);
-        border: 1px solid rgba(79, 70, 229, 0.2);
+        background: var(--badge-bg);
+        border: 1px solid var(--badge-border);
         border-radius: 4px;
         padding: 1px 6px;
         font-size: 13px;
-        color: var(--accent);
+        color: var(--badge-text);
         font-family: 'Menlo', 'Consolas', monospace;
+      }
+
+      .theme-toggle {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 20px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: var(--shadow);
+        z-index: 10;
+      }
+      .theme-toggle:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-2px);
       }
 
       /* ── Card ── */
@@ -452,6 +505,8 @@
   </head>
   <body>
     <div class="wrapper">
+      <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌓</button>
+      
       <!-- Header -->
       <header>
         <div class="badge">🔬 Unicode 字符检测</div>
@@ -1083,6 +1138,15 @@
         t.classList.add('show')
         setTimeout(() => t.classList.remove('show'), 2500)
       }
+
+      // ────────────────────────────────────────────────
+      // Theme Toggle Logic
+      // ────────────────────────────────────────────────
+      function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      }
+
 
 
     </script>
