@@ -1151,17 +1151,26 @@
         '\u2EF3': '\u9F9F', // ⻳ → 龟
       }
 
-      const UNICODE_FIX_MAPS_BY_RANGE = Object.fromEntries(
-        RANGE_DEFS.map((range) => [
-          range.key,
-          Object.fromEntries(
-            Object.entries(UNICODE_FIX_MAP).filter(([ch]) => {
-              const cp = ch.codePointAt(0)
-              return cp >= range.start && cp <= range.end
-            }),
-          ),
-        ]),
-      )
+      function buildSectionFixMap(start, end) {
+        return Object.fromEntries(
+          Object.entries(UNICODE_FIX_MAP).filter(([ch]) => {
+            const cp = ch.codePointAt(0)
+            return cp >= start && cp <= end
+          }),
+        )
+      }
+
+      const KANGXI_FIX_MAP = buildSectionFixMap(0x2f00, 0x2fd5)
+      const RADICALS_SUPPLEMENT_FIX_MAP = buildSectionFixMap(0x2e80, 0x2eff)
+      const COMPAT_IDEO_FIX_MAP = buildSectionFixMap(0xf900, 0xfaff)
+      const COMPAT_IDEO_SUPPLEMENT_FIX_MAP = buildSectionFixMap(0x2f800, 0x2fa1f)
+
+      const UNICODE_FIX_MAPS_BY_RANGE = {
+        'kangxi': KANGXI_FIX_MAP,
+        'radicals-supplement': RADICALS_SUPPLEMENT_FIX_MAP,
+        'compat-ideographs': COMPAT_IDEO_FIX_MAP,
+        'compat-ideographs-supplement': COMPAT_IDEO_SUPPLEMENT_FIX_MAP,
+      }
 
       function getFixMapForRanges(selectedRanges) {
         return Object.assign({}, ...selectedRanges.map((range) => UNICODE_FIX_MAPS_BY_RANGE[range.key] ?? {}))
