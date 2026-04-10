@@ -718,6 +718,32 @@ function convert(andCopy) {
 }
 
 // ────────────────────────────────────────────────
+// Paste from clipboard
+// ────────────────────────────────────────────────
+async function pasteFromClipboard() {
+  try {
+    if (!navigator.clipboard?.readText) {
+      showToast('⚠️ 当前环境不支持读取剪贴板')
+      return
+    }
+
+    const text = await navigator.clipboard.readText()
+    if (!text) {
+      showToast('⚠️ 剪贴板里没有可粘贴的文本')
+      return
+    }
+
+    inputEl.value = text
+    inputEl.focus()
+    inputEl.setSelectionRange(text.length, text.length)
+    refreshAnalysis()
+    showToast('✓ 已从剪贴板填入输入框')
+  } catch (error) {
+    showToast('⚠️ 读取剪贴板失败，请检查浏览器权限')
+  }
+}
+
+// ────────────────────────────────────────────────
 // Clear
 // ────────────────────────────────────────────────
 function clearAll() {
