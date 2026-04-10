@@ -504,9 +504,9 @@ textarea::placeholder {
 /* ── Toast ── */
 #toast {
   position: fixed;
-  bottom: 32px;
+  top: 24px;
   left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%) translateY(-16px);
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 100px;
