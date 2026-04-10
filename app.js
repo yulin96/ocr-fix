@@ -565,6 +565,7 @@ function positionRangeTooltip(anchorRect) {
   const margin = 12
   let left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2
   let top = anchorRect.top - tooltipRect.height - gap
+  let placeBelow = false
 
   if (left < margin) {
     left = margin
@@ -576,6 +577,7 @@ function positionRangeTooltip(anchorRect) {
 
   if (top < margin) {
     top = anchorRect.bottom + gap
+    placeBelow = true
   }
 
   if (top + tooltipRect.height > window.innerHeight - margin) {
@@ -584,6 +586,7 @@ function positionRangeTooltip(anchorRect) {
 
   rangeTooltip.style.left = `${Math.max(margin, left)}px`
   rangeTooltip.style.top = `${Math.max(margin, top)}px`
+  rangeTooltip.classList.toggle('place-below', placeBelow)
 }
 
 function showRangeTooltip(text, anchorRect) {
@@ -678,8 +681,6 @@ function convert(andCopy) {
 
   legendBad.style.display = fixCount > 0 ? 'flex' : 'none'
   legendUnk.style.display = badCount > fixCount ? 'flex' : 'none'
-
-  outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 
   if (andCopy) {
     navigator.clipboard.writeText(result).then(() => showToast('✓ 已复制纯文本到剪贴板'))
