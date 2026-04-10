@@ -541,8 +541,88 @@ const badCountEl = document.getElementById('bad-count')
 const fixCountEl = document.getElementById('fix-count')
 const btnCopy = document.getElementById('btn-copy')
 const rangeInputs = Array.from(document.querySelectorAll('[data-range-key]'))
+const rangeTooltip = document.getElementById('range-tooltip')
 
 loadRangePreferences()
+
+function getRangeLabelFromControl(control) {
+  return control?.closest('.range-option') ?? null
+}
+
+function getTooltipText(control) {
+  const label = getRangeLabelFromControl(control)
+  return label?.dataset.tooltip?.trim() ?? ''
+}
+
+function hideRangeTooltip() {
+  rangeTooltip.classList.remove('show')
+  rangeTooltip.setAttribute('aria-hidden', 'true')
+}
+
+function positionRangeTooltip(anchorX, anchorY) {
+  const tooltipRect = rangeTooltip.getBoundingClientRect()
+  const gap = 14
+  const margin = 12
+  let left = anchorX + gap
+  let top = anchorY + gap
+
+  if (left + tooltipRect.width > window.innerWidth - margin) {
+    left = Math.max(margin, anchorX - tooltipRect.width - gap)
+  }
+
+  if (top + tooltipRect.height > window.innerHeight - margin) {
+    top = Math.max(margin, anchorY - tooltipRect.height - gap)
+  }
+
+  rangeTooltip.style.left = `${Math.max(margin, left)}px`
+  rangeTooltip.style.top = `${Math.max(margin, top)}px`
+}
+
+function showRangeTooltip(text, anchorX, anchorY) {
+  if (!text) return
+  rangeTooltip.textContent = text
+  rangeTooltip.setAttribute('aria-hidden', 'false')
+  rangeTooltip.classList.add('show')
+
+  requestAnimationFrame(() => {
+    positionRangeTooltip(anchorX, anchorY)
+  })
+}
+
+function handleRangeTooltipMove(event) {
+  if (!rangeTooltip.classList.contains('show')) return
+  positionRangeTooltip(event.clientX, event.clientY)
+}
+
+function wireRangeTooltip(control) {
+  const label = getRangeLabelFromControl(control)
+  if (!label) return
+
+  label.addEventListener('mouseenter', (event) => {
+    const text = getTooltipText(control)
+    if (text) showRangeTooltip(text, event.clientX, event.clientY)
+  })
+
+  label.addEventListener('mousemove', handleRangeTooltipMove)
+  label.addEventListener('mouseleave', hideRangeTooltip)
+
+  control.addEventListener('focus', () => {
+    const text = getTooltipText(control)
+    if (!text) return
+    const rect = label.getBoundingClientRect()
+    showRangeTooltip(text, rect.left + rect.width / 2, rect.bottom + 10)
+  })
+
+  control.addEventListener('blur', hideRangeTooltip)
+}
+
+rangeInputs.forEach(wireRangeTooltip)
+
+window.addEventListener('scroll', hideRangeTooltip, true)
+window.addEventListener('resize', hideRangeTooltip)
+document.addEventListener('pointerdown', (event) => {
+  if (!event.target.closest?.('.range-option')) hideRangeTooltip()
+})
 
 function refreshAnalysis() {
   const val = inputEl.value

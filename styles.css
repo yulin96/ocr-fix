@@ -211,6 +211,53 @@ h1 {
   font-size: 12px;
 }
 
+.range-tooltip {
+  position: fixed;
+  z-index: 30;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(31, 41, 55, 0.98));
+  color: #f9fafb;
+  font-size: 12px;
+  line-height: 1.6;
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.24),
+    0 4px 12px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.range-tooltip::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: inherit;
+  border-left: inherit;
+  border-top: inherit;
+  border-top-left-radius: 2px;
+}
+
+.range-tooltip.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.dark .range-tooltip {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
 .theme-toggle {
   position: absolute;
   top: 24px;
